@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Répartition des Tâches - Équipe</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #2ecc71, #e74c3c, #f39c12);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 2.2em;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 14px 16px;
+            text-align: center;
+            border: 1px solid #e1e1e1;
+        }
+        
+        th {
+            background: linear-gradient(to bottom, #3498db, #2980b9);
+            color: white;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .task-name {
+            text-align: left;
+            font-weight: 500;
+            background-color: #f1f8ff;
+            color: #2c3e50;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background-color: #e8f4fc;
+            font-size: 1.1em;
+        }
+        
+        .total-row td:first-child {
+            text-align: left;
+            padding-left: 16px;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .slider {
+            width: 100%;
+            margin: 8px 0;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #dcdde1;
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .slider::-webkit-slider-thumb:hover {
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        
+        .percentage {
+            font-weight: bold;
+            color: #2980b9;
+            min-width: 40px;
+            display: inline-block;
+            font-size: 1.1em;
+        }
+        
+        .charts-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .individual-charts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-wrapper {
+            flex: 1;
+            min-width: 280px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .chart-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .team-chart-wrapper {
+            flex: 1;
+            min-width: 600px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .team-chart-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1.2em;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f2f6;
+        }
+        
+        .person-total {
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 1.05em;
+        }
+        
+        .instructions {
+            background: linear-gradient(to right, #e8f4fc, #d6eaf8);
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .instructions p {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.05em;
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            margin: 30px 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #3498db;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-wrapper, .team-chart-wrapper {
+                min-width: 100%;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 10px 12px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tableau de Répartition des Tâches</h1>
+        <div class="subtitle">Visualisez et ajustez la répartition du travail dans votre équipe</div>
+        
+        <div class="instructions">
+            <p>Utilisez les curseurs pour ajuster la répartition des tâches. Le total pour chaque personne est automatiquement recalculé pour rester à 100%.</p>
+        </div>
+        
+        <table id="tasks-table">
+            <thead>
+                <tr>
+                    <th>Tâches</th>
+                    <th>Sam</th>
+                    <th>Bruno</th>
+                    <th>François</th>
+                    <th>Nico</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Les lignes seront générées par JavaScript -->
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td>TOTAL</td>
+                    <td id="total-sam">100%</td>
+                    <td id="total-bruno">100%</td>
+                    <td id="total-francois">100%</td>
+                    <td id="total-nico">100%</td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <h2 class="section-title">Répartition Individuelle</h2>
+        <div class="individual-charts">
+            <div class="chart-wrapper">
+                <div class="chart-title">Répartition de Sam</div>
+                <canvas id="chart-sam"></canvas>
+                <div class="person-total" id="total-chart-sam">Total: 100%</div>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-title">Répartition de Bruno</div>
+                <canvas id="chart-bruno"></canvas>
+                <div class="person-total" id="total-chart-bruno">Total: 100%</div>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-title">Répartition de François</div>
+                <canvas id="chart-francois"></canvas>
+                <div class="person-total" id="total-chart-francois">Total: 100%</div>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-title">Répartition de Nico</div>
+                <canvas id="chart-nico"></canvas>
+                <div class="person-total" id="total-chart-nico">Total: 100%</div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">Vue d'Ensemble de l'Équipe</h2>
+        <div class="charts-container">
+            <div class="team-chart-wrapper">
+                <div class="chart-title">Moyenne de Répartition par Tâche</div>
+                <canvas id="chart-team-average"></canvas>
+                <div class="person-total" id="total-team-average">Moyenne de l'équipe par tâche</div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Tableau de répartition des tâches | Généré dynamiquement</p>
+        </div>
+    </div>
+
+    <script>
+        // Données initiales
+        const tasks = [
+            "Création produit / image / GED / fiche produit web",
+            "Marketing - page solution - page produit",
+            "Demande technique du commerce (mail tel)",
+            "Projets (ex double ligne - build center)",
+            "Màj gamme produit / BDD",
+            "Màj des nomenclatures / méthode",
+            "Tâche annexe / étiquette / paramétrage méthode",
+            "Autre"
+        ];
+
+        const people = ["Sam", "Bruno", "Francois", "Nico"];
+        
+        // Initialisation des valeurs avec répartition égale
+        let taskValues = {};
+        people.forEach(person => {
+            taskValues[person] = {};
+            tasks.forEach(task => {
+                taskValues[person][task] = 1; // Valeur initiale égale pour toutes les tâches
+            });
+        });
+
+        // Création du tableau
+        const tableBody = document.querySelector('#tasks-table tbody');
+        
+        tasks.forEach((task, index) => {
+            const row = document.createElement('tr');
+            
+            // Cellule du nom de la tâche
+            const taskCell = document.createElement('td');
+            taskCell.className = 'task-name';
+            taskCell.textContent = task;
+            row.appendChild(taskCell);
+            
+            // Cellules pour chaque personne
+            people.forEach(person => {
+                const cell = document.createElement('td');
+                const sliderContainer = document.createElement('div');
+                sliderContainer.className = 'slider-container';
+                
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = '1';
+                slider.max = '100';
+                slider.value = taskValues[person][task];
+                slider.className = 'slider';
+                slider.dataset.person = person;
+                slider.dataset.task = task;
+                
+                const percentage = document.createElement('span');
+                percentage.className = 'percentage';
+                percentage.id = `value-${person}-${index}`;
+                percentage.textContent = calculatePercentage(person, task) + '%';
+                
+                sliderContainer.appendChild(slider);
+                sliderContainer.appendChild(percentage);
+                cell.appendChild(sliderContainer);
+                row.appendChild(cell);
+                
+                // Événement pour le curseur
+                slider.addEventListener('input', function() {
+                    updateTaskValue(this.dataset.person, this.dataset.task, parseInt(this.value));
+                    updatePercentages();
+                    updateCharts();
+                });
+            });
+            
+            tableBody.appendChild(row);
+        });
+
+        // Fonction pour calculer le pourcentage d'une tâche pour une personne
+        function calculatePercentage(person, task) {
+            const total = Object.values(taskValues[person]).reduce((sum, value) => sum + value, 0);
+            return Math.round((taskValues[person][task] / total) * 100);
+        }
+
+        // Fonction pour calculer la moyenne d'une tâche pour l'équipe
+        function calculateTeamAverage(task) {
+            let sum = 0;
+            people.forEach(person => {
+                sum += calculatePercentage(person, task);
+            });
+            return Math.round(sum / people.length);
+        }
+
+        // Fonction pour mettre à jour la valeur d'une tâche
+        function updateTaskValue(person, task, value) {
+            taskValues[person][task] = value;
+        }
+
+        // Fonction pour mettre à jour tous les pourcentages
+        function updatePercentages() {
+            tasks.forEach((task, index) => {
+                people.forEach(person => {
+                    const percentageElement = document.getElementById(`value-${person}-${index}`);
+                    percentageElement.textContent = calculatePercentage(person, task) + '%';
+                });
+            });
+            
+            // Mettre à jour les totaux
+            people.forEach(person => {
+                const totalElement = document.getElementById(`total-${person.toLowerCase()}`);
+                totalElement.textContent = '100%';
+            });
+        }
+
+        // Initialisation des graphiques
+        const charts = {};
+        
+        // Graphiques individuels
+        people.forEach(person => {
+            const ctx = document.getElementById(`chart-${person.toLowerCase()}`).getContext('2d');
+            charts[person] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: tasks,
+                    datasets: [{
+                        data: tasks.map(task => calculatePercentage(person, task)),
+                        backgroundColor: [
+                            '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
+                            '#9b59b6', '#1abc9c', '#d35400', '#34495e'
+                        ],
+                        borderWidth: 2,
+                        borderColor: 'white'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '50%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: {
+                                    size: 10
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        // Graphique de moyenne de l'équipe
+        const teamAverageCtx = document.getElementById('chart-team-average').getContext('2d');
+        charts.teamAverage = new Chart(teamAverageCtx, {
+            type: 'bar',
+            data: {
+                labels: tasks.map(task => task.length > 25 ? task.substring(0, 25) + '...' : task),
+                datasets: [{
+                    label: 'Moyenne de répartition (%)',
+                    data: tasks.map(task => calculateTeamAverage(task)),
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: '#3498db',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Pourcentage (%)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                return tasks[context[0].dataIndex];
+                            },
+                            label: function(context) {
+                                return 'Moyenne: ' + context.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Fonction pour mettre à jour tous les graphiques
+        function updateCharts() {
+            // Mettre à jour les graphiques individuels
+            people.forEach(person => {
+                charts[person].data.datasets[0].data = tasks.map(task => calculatePercentage(person, task));
+                charts[person].update();
+                
+                // Mettre à jour le total affiché sous le graphique
+                const totalElement = document.getElementById(`total-chart-${person.toLowerCase()}`);
+                totalElement.textContent = 'Total: 100%';
+            });
+            
+            // Mettre à jour le graphique de moyenne d'équipe
+            charts.teamAverage.data.datasets[0].data = tasks.map(task => calculateTeamAverage(task));
+            charts.teamAverage.update();
+            
+            // Mettre à jour le total du graphique d'équipe
+            document.getElementById('total-team-average').textContent = 
+                'Moyenne de répartition par tâche pour l\'équipe';
+        }
+
+        // Initialisation
+        updatePercentages();
+    </script>
+</body>
+</html>
